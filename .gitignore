@@ -1,0 +1,63 @@
+# Node modules
+node_modules/
+
+# macOS
+.DS_Store
+
+# Expo
+.expo/
+.expo-shared/
+
+# Yarn or npm logs
+yarn-error.log
+npm-debug.log
+pnpm-debug.log
+
+# Metro bundler cache
+.metro/
+.cache/
+
+# Build outputs
+dist/
+build/
+web-build/
+android/
+ios/
+
+# Test coverage
+coverage/
+
+# System files
+Thumbs.db
+.vscode/
+.idea/
+*.iml
+
+# Environment files
+.env
+.env.*  # If you're using environment variants
+
+# Logs
+*.log
+
+# Watchman
+.watchmanconfig
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Bundle artifacts (e.g., if using expo export)
+*.tar.gz
+*.tar
+
+# TypeScript
+*.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# Expo Go's QR code data
+expo-debug.log

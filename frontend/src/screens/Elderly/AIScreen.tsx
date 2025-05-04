@@ -201,12 +201,10 @@ const AIScreen = ({ avatarName = "Assistant" }: AIScreenProps) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chat with {avatarName}</Text>
-        <View style={styles.placeholder} />
-      </View>
+  <View style={styles.placeholder} />
+  <Text style={styles.headerTitle}>Chat with {avatarName}</Text>
+  <View style={styles.placeholder} />
+</View>
 
       <View style={styles.content}>
         <View style={styles.avatarWrapper}>

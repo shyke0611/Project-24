@@ -40,13 +40,7 @@ const ReminderFormModal = ({ visible, onClose, onSave }: ReminderFormModalProps)
 
   const handleSave = () => {
     if (title.trim()) {
-      onSave({
-        title,
-        date,
-        time,
-        notes,
-        type,
-      })
+      onSave({ title, date, time, notes, type })
       resetForm()
     }
   }
@@ -64,27 +58,22 @@ const ReminderFormModal = ({ visible, onClose, onSave }: ReminderFormModalProps)
     onClose()
   }
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString()
-  }
-
-  const formatTime = (time: Date) => {
-    return time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-  }
+  const formatDate = (date: Date) => date.toLocaleDateString()
+  const formatTime = (time: Date) => time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false)
-    if (selectedDate) {
-      setDate(selectedDate)
-    }
+    if (selectedDate) setDate(selectedDate)
   }
 
   const handleTimeChange = (event: any, selectedTime?: Date) => {
     setShowTimePicker(false)
-    if (selectedTime) {
-      setTime(selectedTime)
-    }
+    if (selectedTime) setTime(selectedTime)
   }
+
+  const reminderTypes = ["medication", "appointment", "event", "task", "other"]
+
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
@@ -137,30 +126,15 @@ const ReminderFormModal = ({ visible, onClose, onSave }: ReminderFormModalProps)
             <View style={styles.formGroup}>
               <Text style={styles.label}>Type</Text>
               <View style={styles.typeContainer}>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === "medication" && styles.selectedTypeButton]}
-                  onPress={() => setType("medication")}
-                >
-                  <Text style={[styles.typeText, type === "medication" && styles.selectedTypeText]}>Medication</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === "hydration" && styles.selectedTypeButton]}
-                  onPress={() => setType("hydration")}
-                >
-                  <Text style={[styles.typeText, type === "hydration" && styles.selectedTypeText]}>Hydration</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === "appointment" && styles.selectedTypeButton]}
-                  onPress={() => setType("appointment")}
-                >
-                  <Text style={[styles.typeText, type === "appointment" && styles.selectedTypeText]}>Appointment</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === "other" && styles.selectedTypeButton]}
-                  onPress={() => setType("other")}
-                >
-                  <Text style={[styles.typeText, type === "other" && styles.selectedTypeText]}>Other</Text>
-                </TouchableOpacity>
+                {reminderTypes.map((t) => (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.typeButton, type === t && styles.selectedTypeButton]}
+                    onPress={() => setType(t)}
+                  >
+                    <Text style={[styles.typeText, type === t && styles.selectedTypeText]}>{capitalize(t)}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
 
@@ -185,13 +159,8 @@ const ReminderFormModal = ({ visible, onClose, onSave }: ReminderFormModalProps)
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FAF9F6",
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: "#FAF9F6" },
+  keyboardAvoidingView: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -201,31 +170,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
   },
-  closeButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-  },
-  placeholder: {
-    width: 40,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 24,
-  },
-  formGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "500",
-    marginBottom: 8,
-    color: "#333",
-  },
+  closeButton: { padding: 8 },
+  headerTitle: { fontSize: 20, fontWeight: "600" },
+  placeholder: { width: 40 },
+  scrollView: { flex: 1 },
+  scrollContent: { padding: 24 },
+  formGroup: { marginBottom: 20 },
+  label: { fontSize: 16, fontWeight: "500", marginBottom: 8, color: "#333" },
   input: {
     backgroundColor: "white",
     borderRadius: 12,
@@ -234,10 +185,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
-  textArea: {
-    height: 100,
-    textAlignVertical: "top",
-  },
+  textArea: { height: 100, textAlignVertical: "top" },
   dateTimeButton: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -248,15 +196,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E0E0E0",
   },
-  dateTimeText: {
-    fontSize: 16,
-    color: "#333",
-  },
-  typeContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 8,
-  },
+  dateTimeText: { fontSize: 16, color: "#333" },
+  typeContainer: { flexDirection: "row", flexWrap: "wrap", marginTop: 8 },
   typeButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
@@ -270,17 +211,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#5EBFB5",
     borderColor: "#5EBFB5",
   },
-  typeText: {
-    fontSize: 14,
-    color: "#666",
-  },
-  selectedTypeText: {
-    color: "white",
-    fontWeight: "500",
-  },
-  saveButton: {
-    marginTop: 16,
-  },
+  typeText: { fontSize: 14, color: "#666" },
+  selectedTypeText: { color: "white", fontWeight: "500" },
+  saveButton: { marginTop: 16 },
 })
 
 export default ReminderFormModal
