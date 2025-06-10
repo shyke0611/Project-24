@@ -1,0 +1,113 @@
+# === GLOBAL OS FILES ===
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+desktop.ini
+
+# === IDE FILES ===
+.vscode/
+.idea/
+*.iml
+
+# === JAVA / SPRING BOOT ===
+/backend/target/
+*.log
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+.mvn/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Gradle
+.gradle/
+build/
+**/build/
+
+# === REACT NATIVE (EXPO) ===
+/frontend/node_modules/
+.expo/
+.expo-shared/
+*.expo/
+*.expo-shared/
+
+# iOS
+/frontend/ios/Pods/
+/frontend/ios/build/
+/frontend/ios/*.xcworkspace
+/frontend/ios/Podfile.lock
+
+# Android
+/frontend/android/.gradle/
+/frontend/android/app/build/
+/frontend/android/build/
+
+# Android Studio
+.gradle/
+local.properties
+*.jks
+
+# Expo
+*.turtle/
+*.expo/*
+
+# Yarn / npm
+yarn-error.log
+npm-debug.log
+package-lock.json
+yarn.lock
+
+# Metro / Babel / Cache
+.babelrc
+.buckconfig
+.flowconfig
+.haulrc
+.watchmanconfig
+.expo
+/metro-cache/
+/tmp/
+
+# === ENV / SECRETS ===
+.env*
+.env.local
+.env.development
+.env.test
+.env.production
+
+# === OTHER ===
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# === TEST / COVERAGE ===
+/coverage/
+*.lcov
+/target/surefire-reports/
+test-results/
+
+# === LOGS ===
+*.log
+*.log.*
+
+# === DIST / BUILD OUTPUT ===
+/dist/
+/out/
+/build/
+
+# === OS-SPECIFIC FOR MONOREPOS ===
+/**/node_modules/
+**/__pycache__/
+**/.venv/
+
+# === PERSONAL ===
+*.orig
+*.rej
+*.patch
