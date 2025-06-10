@@ -1,0 +1,10 @@
+
+
+### VS Code ###
+.vscode/
+
+# Ignore the chroma-memory folder
+chroma-memory/
+# Ignore __pycache__ folders__
+__pycache__/
+
