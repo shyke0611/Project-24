@@ -1,4 +1,5 @@
 import { chatAPI } from './api';
+import { getLocationAndAddress } from './locationService';
 
 export interface ChatMessage {
   id: string;
@@ -26,7 +27,16 @@ class ChatService {
     }
 
     try {
-      const response = await chatAPI.sendMessage(message, this.userId);
+      // Get device location and address
+      const location = await getLocationAndAddress();
+      const locationData = location ? {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        address: location.address,
+      } : undefined;
+
+      // Send message with location context
+      const response = await chatAPI.sendMessage({ message, location: locationData }, this.userId);
       
       return {
         id: `assistant-${Date.now()}`,

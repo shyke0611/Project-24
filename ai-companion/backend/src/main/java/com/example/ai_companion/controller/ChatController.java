@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Controller for handling chat-related actions, including asking questions,
@@ -35,13 +36,15 @@ public class ChatController {
      * Handles a new user question and returns the assistant's response.
      *
      * @param userId   The ID of the user sending the question.
-     * @param question The user's message.
+     * @param payload  The user's message and optional location info.
      * @return The assistant's response as a plain string.
      */
     @PostMapping("/ask")
-    public String ask(@RequestParam String userId, @RequestBody String question) {
+    public String ask(@RequestParam String userId, @RequestBody Map<String, Object> payload) {
+        String message = (String) payload.get("message");
+        Object location = payload.get("location");
         logger.logToFile(userId, "new question");
-        return llmService.generateAndTrack(userId, question);
+        return llmService.generateAndTrack(userId, message, location);
     }
 
     /**

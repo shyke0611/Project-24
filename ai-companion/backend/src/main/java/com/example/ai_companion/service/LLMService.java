@@ -41,9 +41,10 @@ public class LLMService {
      *
      * @param userId the user ID
      * @param query the user's message
+     * @param location the user's location info (may be null)
      * @return the assistant's response
      */
-    public String generateAndTrack(String userId, String query) {
+    public String generateAndTrack(String userId, String query, Object location) {
         User user = userRepository.findById(userId).orElse(null);
         String coreInfo = (user != null && user.getCoreInformation() != null) ? user.getCoreInformation() : "none";
 
@@ -53,7 +54,7 @@ public class LLMService {
         String memoryContext = fetchMemoryContext(userId, queryToSearch);
 
         String today = LocalDate.now().toString();
-        String prompt = buildLLMPrompt(today, coreInfo, memoryContext, chatHistory, reminderBlock, query);
+        String prompt = buildLLMPrompt(today, coreInfo, memoryContext, chatHistory, reminderBlock, query, location);
         String responseText = chatLanguageModel.chat(prompt);
 
         logger.logToFile(userId, "New User Question: " + query);
@@ -105,6 +106,7 @@ public class LLMService {
             Map<String, Object> body = new HashMap<>();
             body.put("user_id", userId);
             body.put("query", query);
+            body.put("top_k", 5);
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
             ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
@@ -155,7 +157,11 @@ public class LLMService {
         }
 
     /** Builds the final prompt sent to the LLM. */
-    private String buildLLMPrompt(String today, String coreInfo, String memoryContext, String chatHistory, String reminders, String query) {
+    private String buildLLMPrompt(String today, String coreInfo, String memoryContext, String chatHistory, String reminders, String query, Object location) {
+        String locationBlock = "none";
+        if (location != null) {
+            locationBlock = location.toString();
+        }
         return """
             Today is %s.
             You are a personalised virtual assistant designed for elderly care. Your role is to respond supportively and clearly, considering the user's health, personal background, daily context, and emotional needs.
@@ -172,6 +178,9 @@ public class LLMService {
             --- UPCOMING REMINDERS (Tasks to Remember, include time if needed) ---
             %s
 
+            --- USER LOCATION (If available) ---
+            %s
+
             --- USER QUESTION ---
             The user said: "%s"
 
@@ -180,7 +189,9 @@ public class LLMService {
             • Clear and simple language (suitable for older adults)
             • Lighthearted charm
             • No technical jargon
+            • Use the user's location to provide relevant information if necessary 
+            • Do not use emojis
             • Write in warm, engaging, natural-sounding language.
-            """.formatted(today, coreInfo, memoryContext, chatHistory, reminders, query);
+            """.formatted(today, coreInfo, memoryContext, chatHistory, reminders, locationBlock, query);
     }
 }

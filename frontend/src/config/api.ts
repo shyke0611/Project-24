@@ -3,7 +3,7 @@ export const API_CONFIG = {
   // Development - Use your computer's IP address for mobile devices
   development: {
     baseURL: 'http://192.168.1.131:8080',
-    timeout: 10000,
+    timeout: 30000,
   },
   
   // Production (update this with your actual production URL)

@@ -54,8 +54,8 @@ export const authAPI = {
 
 // Chat API calls
 export const chatAPI = {
-  sendMessage: async (message: string, userId: string) => {
-    const response = await api.post(`/memory/ask?userId=${userId}`, message);
+  sendMessage: async (payload: { message: string; location?: any }, userId: string) => {
+    const response = await api.post(`/memory/ask?userId=${userId}`, payload);
     return { message: response.data };
   },
   
