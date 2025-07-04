@@ -15,7 +15,7 @@ public class LLMConfig {
     public LLMConfig() {
         // Load .env file
         Dotenv dotenv = Dotenv.load();
-        this.openAiApiKey = dotenv.get("OPENAI_API_KEY", "default-fallback-key");
+        this.openAiApiKey = dotenv.get("OPENAI_API_KEY", "demo");
     }
 
     @Bean
