@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   View,
   Text,
@@ -15,9 +15,11 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useNavigation } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
 import { useUserRole } from "../../contexts/UserRoleContext"
+import { useAuth } from "../../contexts/AuthContext"
 import IconButton from "../../components/IconButton"
 import Button from "../../components/Button"
 import ReminderFormModal from "../../components/ReminderFormModal"
+import { reminderService, Reminder } from "../../services/reminderService"
 
 const TABS = [
   { label: "Upcoming", icon: "calendar-outline", color: "#60A5FA" },
@@ -28,61 +30,68 @@ const TABS = [
 const RemindersScreen = () => {
   const navigation = useNavigation()
   const { userRole } = useUserRole()
+  const { user } = useAuth()
   const { width } = useWindowDimensions()
   const [reminderFormVisible, setReminderFormVisible] = useState(false)
   const [activeTab, setActiveTab] = useState("Upcoming")
+  const [reminders, setReminders] = useState<Reminder[]>([])
+  const [loading, setLoading] = useState(false)
 
   const isTablet = width >= 768
 
-  const [reminders, setReminders] = useState([
-    {
-      id: 1,
-      title: "Take blood pressure medicine",
-      time: "08:00",
-      type: "medication",
-      icon: "sunny-outline",
-      status: "Upcoming",
-    },
-    {
-      id: 2,
-      title: "Doctor appointment",
-      time: "14:30",
-      type: "appointment",
-      icon: "sunny-outline",
-      status: "Missed",
-    },
-    {
-      id: 3,
-      title: "Take evening medication",
-      time: "20:00",
-      type: "medication",
-      icon: "moon-outline",
-      status: "Completed",
-    },
-  ])
+  // Load reminders when component mounts
+  useEffect(() => {
+    if (user?.id) {
+      reminderService.setUserId(user.id)
+      loadReminders()
+    }
+  }, [user])
+
+  const loadReminders = async () => {
+    setLoading(true)
+    try {
+      const fetchedReminders = await reminderService.getReminders()
+      setReminders(fetchedReminders)
+    } catch (error) {
+      console.error('Error loading reminders:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleAddReminderManually = () => setReminderFormVisible(true)
   const handleAddReminderWithClara = () => navigation.navigate("AI" as never)
 
-  const handleSaveReminder = (reminderData: any) => {
-    const formattedTime = reminderData.time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    const hour = reminderData.time.getHours()
-    const icon = hour >= 6 && hour < 18 ? "sunny-outline" : "moon-outline"
-
-    const newReminder = {
-      id: Date.now(),
-      title: reminderData.title,
-      time: formattedTime,
-      type: reminderData.type,
-      icon,
-      status: "Upcoming",
+  const handleSaveReminder = async (reminderData: any) => {
+    try {
+      const timestamp = reminderData.time.toISOString()
+      const newReminder = await reminderService.createReminder({
+        message: reminderData.title,
+        description: reminderData.description || '',
+        timestamp,
+        tag: reminderData.type,
+        userId: user?.id || '',
+      })
+      
+      setReminders([...reminders, newReminder])
+      setReminderFormVisible(false)
+    } catch (error) {
+      console.error('Error saving reminder:', error)
     }
-
-    setReminders([...reminders, newReminder])
-    setReminderFormVisible(false)
   }
 
-  const filteredReminders = reminders.filter((r) => r.status === activeTab)
+  const filteredReminders = reminders.filter((r) => {
+    switch (activeTab) {
+      case "Upcoming":
+        return r.status === "INCOMPLETE"
+      case "Missed":
+        return r.status === "MISSED"
+      case "Completed":
+        return r.status === "COMPLETE"
+      default:
+        return true
+    }
+  })
 
   return (
     <SafeAreaView style={styles.container}>
@@ -158,29 +167,36 @@ const RemindersScreen = () => {
             ))}
           </View>
 
-          {filteredReminders.map((reminder) => (
-            <View key={reminder.id} style={styles.reminderCard}>
-              <View style={styles.reminderIconContainer}>
-                <Ionicons name={reminder.icon as any} size={24} color="#F9A826" />
+          {filteredReminders.map((reminder) => {
+            const reminderTime = new Date(reminder.timestamp)
+            const hour = reminderTime.getHours()
+            const icon = hour >= 6 && hour < 18 ? "sunny-outline" : "moon-outline"
+            const formattedTime = reminderTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            
+            return (
+              <View key={reminder.id} style={styles.reminderCard}>
+                <View style={styles.reminderIconContainer}>
+                  <Ionicons name={icon as any} size={24} color="#F9A826" />
+                </View>
+                <View style={styles.reminderContent}>
+                  <Text style={styles.reminderTitle}>{reminder.message}</Text>
+                  <Text style={styles.reminderTime}>{formattedTime}</Text>
+                </View>
+                <View
+                  style={[
+                    styles.reminderTypeTag,
+                    reminder.tag === "medication" && styles.medicationTag,
+                    reminder.tag === "appointment" && styles.appointmentTag,
+                    reminder.tag === "event" && styles.eventTag,
+                    reminder.tag === "task" && styles.taskTag,
+                    reminder.tag === "other" && styles.otherTag,
+                  ]}
+                >
+                  <Text style={styles.reminderTypeText}>{reminder.tag}</Text>
+                </View>
               </View>
-              <View style={styles.reminderContent}>
-                <Text style={styles.reminderTitle}>{reminder.title}</Text>
-                <Text style={styles.reminderTime}>{reminder.time}</Text>
-              </View>
-              <View
-                style={[
-                  styles.reminderTypeTag,
-                  reminder.type === "medication" && styles.medicationTag,
-                  reminder.type === "appointment" && styles.appointmentTag,
-                  reminder.type === "event" && styles.eventTag,
-                  reminder.type === "task" && styles.taskTag,
-                  reminder.type === "other" && styles.otherTag,
-                ]}
-              >
-                <Text style={styles.reminderTypeText}>{reminder.type}</Text>
-              </View>
-            </View>
-          ))}
+            )
+          })}
         </ScrollView>
 
         <ReminderFormModal

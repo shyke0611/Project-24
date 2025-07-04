@@ -17,6 +17,8 @@ import { useNavigation } from "@react-navigation/native"
 import { Ionicons } from "@expo/vector-icons"
 import { MaterialIcons } from "@expo/vector-icons"
 import ChatHistoryModal from "../../components/ChatHistoryModal"
+import { chatService } from "../../services/chatService"
+import { useAuth } from "../../contexts/AuthContext"
 
 enum ChatState {
   IDLE = 0,
@@ -47,11 +49,32 @@ type AIScreenProps = {
 
 const AIScreen = ({ avatarName = "Assistant" }: AIScreenProps) => {
   const navigation = useNavigation()
+  const { user } = useAuth()
   const [chatState, setChatState] = useState<ChatState>(ChatState.IDLE)
   const [message, setMessage] = useState("")
   const [historyModalVisible, setHistoryModalVisible] = useState(false)
   const [messages, setMessages] = useState<Message[]>(sampleMessages)
   const [aiImage] = useState(AI_IMAGES[0])
+
+  // Set up chat service with user ID and load chat history
+  useEffect(() => {
+    if (user?.id) {
+      chatService.setUserId(user.id)
+      // Load chat history
+      loadChatHistory()
+    }
+  }, [user])
+
+  const loadChatHistory = async () => {
+    try {
+      const history = await chatService.getChatHistory()
+      if (history.length > 0) {
+        setMessages(history)
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error)
+    }
+  }
 
   const pulseAnim = useRef(new Animated.Value(1)).current
   const recordingDot = useRef(new Animated.Value(0)).current
@@ -105,7 +128,7 @@ const AIScreen = ({ avatarName = "Assistant" }: AIScreenProps) => {
     setChatState(ChatState.IDLE)
   }
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (message.trim()) {
       const newUserMessage: Message = {
         id: `user-${Date.now()}`,
@@ -118,19 +141,27 @@ const AIScreen = ({ avatarName = "Assistant" }: AIScreenProps) => {
       setMessage("")
       setChatState(ChatState.LISTENING)
 
-      setTimeout(() => {
+      try {
+        // Get AI response from backend
+        const aiResponse = await chatService.sendMessage(message)
         setChatState(ChatState.SPEAKING)
+        
         setTimeout(() => {
-          const newAssistantMessage: Message = {
-            id: `assistant-${Date.now()}`,
-            text: "I understand. How else can I help you today?",
-            sender: "assistant",
-            timestamp: new Date(),
-          }
-          setMessages((prevMessages) => [...prevMessages, newAssistantMessage])
+          setMessages((prevMessages) => [...prevMessages, aiResponse])
           setChatState(ChatState.IDLE)
-        }, 2000)
-      }, 1500)
+        }, 1000)
+      } catch (error) {
+        console.error('Error getting AI response:', error)
+        // Fallback response
+        const fallbackMessage: Message = {
+          id: `assistant-${Date.now()}`,
+          text: "I apologize, but I'm having trouble connecting right now. Please try again later.",
+          sender: "assistant",
+          timestamp: new Date(),
+        }
+        setMessages((prevMessages) => [...prevMessages, fallbackMessage])
+        setChatState(ChatState.IDLE)
+      }
     }
   }
 
