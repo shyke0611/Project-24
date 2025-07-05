@@ -28,31 +28,32 @@ type AuthStackParamList = {
 type CreateAccountScreenNavigationProp = StackNavigationProp<AuthStackParamList, "CreateAccount">
 
 const CreateAccountScreen = () => {
-  const [fullName, setFullName] = useState("")
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
 
   const navigation = useNavigation<CreateAccountScreenNavigationProp>()
-  const { createAccount } = useAuth()
+  const { createAccount, loading, error } = useAuth()
   const { width } = useWindowDimensions()
 
   const isTablet = width >= 768
 
   const handleCreateAccount = async () => {
-    // Skip validation and directly create account
-    setLoading(true)
+    if (!username.trim() || !password.trim()) {
+      return
+    }
+
+    if (password !== confirmPassword) {
+      return
+    }
 
     try {
-      // Always succeed
-      await createAccount(email || "test@example.com", password || "password", fullName || "Test User")
-      navigation.navigate("RoleSelection")
+      const success = await createAccount(username, password)
+      if (success) {
+        navigation.navigate("RoleSelection")
+      }
     } catch (err) {
       console.log("Error during account creation:", err)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -73,23 +74,12 @@ const CreateAccountScreen = () => {
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Full Name</Text>
+              <Text style={styles.label}>Username</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your full name"
-                value={fullName}
-                onChangeText={setFullName}
-              />
-            </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                placeholder="Enter your username"
+                value={username}
+                onChangeText={setUsername}
                 autoCapitalize="none"
               />
             </View>

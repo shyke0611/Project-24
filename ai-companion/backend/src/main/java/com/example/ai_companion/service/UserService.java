@@ -15,20 +15,23 @@ public class UserService {
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    public boolean register(UserDTO dto) {
+    public User register(UserDTO dto) {
         if (userRepository.findByUsername(dto.getUsername()) != null) {
-            return false;
+            return null;
         }
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         userRepository.save(user);
-        return true;
+        return user;
     }
 
-    public boolean login(UserDTO dto) {
+    public User login(UserDTO dto) {
         User user = userRepository.findByUsername(dto.getUsername());
-        return user != null && passwordEncoder.matches(dto.getPassword(), user.getPassword());
+        if (user != null && passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
+            return user;
+        }
+        return null;
     }
     
 }

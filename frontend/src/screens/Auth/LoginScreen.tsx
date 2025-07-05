@@ -27,29 +27,27 @@ type AuthStackParamList = {
 type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, "Login">
 
 const LoginScreen = () => {
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
 
   const navigation = useNavigation<LoginScreenNavigationProp>()
-  const { login } = useAuth()
+  const { login, loading, error } = useAuth()
   const { width } = useWindowDimensions()
 
   const isTablet = width >= 768
 
   const handleLogin = async () => {
-    // Skip validation and directly log in
-    setLoading(true)
+    if (!username.trim() || !password.trim()) {
+      return
+    }
 
     try {
-      // Always succeed
-      await login(email || "test@example.com", password || "password")
-      // Navigation to role selection will happen automatically due to the AppNavigator
+      const success = await login(username, password)
+      if (success) {
+        // Navigation to role selection will happen automatically due to the AppNavigator
+      }
     } catch (err) {
       console.log("Error during login:", err)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -72,13 +70,12 @@ const LoginScreen = () => {
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={styles.label}>Username</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                placeholder="Enter your username"
+                value={username}
+                onChangeText={setUsername}
                 autoCapitalize="none"
               />
             </View>
