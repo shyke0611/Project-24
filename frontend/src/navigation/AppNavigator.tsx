@@ -17,6 +17,7 @@ import DailyCheckinScreen from "../screens/Elderly/DailyCheckinScreen"
 import SettingsScreen from "../screens/Elderly/SettingsScreen"
 import AIScreen from "../screens/Elderly/AIScreen"
 import TutorialsListScreen from "../screens/Elderly/TutorialsListScreen"
+import MapScreen from "../screens/Shared/MapScreen"
 
 // Caregiver Screens
 import CaregiverHomeScreen from "../screens/Caregiver/CaregiverHomeScreen"
@@ -46,7 +47,7 @@ const AuthNavigator = () => (
   </AuthStack.Navigator>
 )
 
-// Elderly Tab Navigator - Updated with Reminders tab
+// Elderly Tab Navigator - Updated with Reminders tab and Map tab
 const ElderlyTabNavigator = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
@@ -59,12 +60,13 @@ const ElderlyTabNavigator = () => (
           iconName = focused ? "person" : "person-outline"
         } else if (route.name === "Reminders") {
           iconName = focused ? "notifications" : "notifications-outline"
+        } else if (route.name === "Map") {
+          iconName = focused ? "map" : "map-outline"
         } else if (route.name === "Profile") {
           iconName = focused ? "person-circle" : "person-circle-outline"
         }
 
         return <Ionicons name={iconName as keyof typeof Ionicons.glyphMap} size={size} color={color} />
-
       },
       tabBarActiveTintColor: "#5EBFB5",
       tabBarInactiveTintColor: "gray",
@@ -74,6 +76,7 @@ const ElderlyTabNavigator = () => (
     <Tab.Screen name="Home" component={ElderlyHomeNavigator} />
     <Tab.Screen name="AI" component={AIScreen} />
     <Tab.Screen name="Reminders" component={RemindersScreen} />
+    <Tab.Screen name="Map" component={MapScreen} />
     <Tab.Screen name="Profile" component={ProfileNavigator} />
   </Tab.Navigator>
 )

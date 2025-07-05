@@ -88,4 +88,16 @@ export const reminderAPI = {
   },
 };
 
+// Location API calls
+export const locationAPI = {
+  createLocation: async (location: { userId: string; latitude: number; longitude: number; timestamp?: string }) => {
+    const response = await api.post('/locations', location);
+    return response.data;
+  },
+  getLocations: async (userId: string, page: number = 0, size: number = 10) => {
+    const response = await api.get(`/locations?userId=${userId}&page=${page}&size=${size}`);
+    return response.data;
+  },
+};
+
 export default api; 
