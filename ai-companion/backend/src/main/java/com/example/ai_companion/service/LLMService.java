@@ -91,9 +91,11 @@ public class LLMService {
 
         StringBuilder sb = new StringBuilder();
         for (Reminder r : reminders) {
-            sb.append("Title: ").append(r.getMessage()).append("\n")
+            sb.append("Title: ").append(r.getTitle()).append("\n")
               .append("Description: ").append(r.getDescription()).append("\n")
-              .append("Due: ").append(r.getTimestamp()).append("\n\n");
+              .append("Due: ").append(r.getTimestamp()).append("\n")
+              .append("Tags: ").append(r.getTags() != null ? String.join(", ", r.getTags().stream().map(Enum::name).toList()) : "none").append("\n")
+              .append("Status: ").append(r.getStatus()).append("\n\n");
         }
         return sb.toString().trim();
     }

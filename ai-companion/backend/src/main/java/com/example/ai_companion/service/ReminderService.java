@@ -1,6 +1,7 @@
 package com.example.ai_companion.service;
 
 import com.example.ai_companion.model.Reminder;
+import com.example.ai_companion.model.ReminderTag;
 import com.example.ai_companion.repository.ReminderRepository;
 import com.example.ai_companion.utils.logger;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -10,6 +11,9 @@ import org.springframework.stereotype.Service;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * Service responsible for extracting reminders from user messages
@@ -53,10 +57,10 @@ public class ReminderService {
 
             Return one or more reminders in the following format (each on its own line if there are multiple):
 
-            Task: <the main task or action>
+            Task: <the main task title>
             Date: <date in YYYY-MM-DD or YYYY-MM-DD HH:mm>
-            Description: <a short optional description of the task>
-            Tag: <one of: medication, appointment, event, task, other>
+            Description: <a short description of the task>
+            Tags: <comma-separated list of: MEDICATION, APPOINTMENT, EVENT, TASK, PERSONAL, WORK, FINANCE, HEALTH, TRAVEL, SOCIAL, EDUCATION, LEISURE, OTHER>
 
             If there are no reminders to extract, just reply with "none".
         """.formatted(today, message);
@@ -78,14 +82,16 @@ public class ReminderService {
                 date = line.substring(5).trim();
             } else if (line.toLowerCase().startsWith("description:")) {
                 description = line.substring(12).trim();
-            } else if (line.toLowerCase().startsWith("tag:")) {
-                tag = line.substring(4).trim().toLowerCase();
+            } else if (line.toLowerCase().startsWith("tags:")) {
+                tag = line.substring(5).trim().toUpperCase();
             }
 
             if (task != null && date != null && tag != null) {
                 Instant timestamp = parseDateToInstant(date, userId);
                 if (timestamp != null) {
-                    Reminder reminder = new Reminder(userId, task, timestamp, description, tag);
+                    // Parse comma-separated tags
+                    List<ReminderTag> tags = parseTags(tag);
+                    Reminder reminder = new Reminder(userId, task, timestamp, description, tags);
                     reminderRepository.save(reminder);
                     logger.logToFile(userId, "Saved reminder: " + reminder);
                 }
@@ -97,6 +103,27 @@ public class ReminderService {
                 tag = null;
             }
         }
+    }
+
+    /**
+     * Parses a comma-separated string of tags into a list of ReminderTag enums.
+     */
+    private List<ReminderTag> parseTags(String tagString) {
+        if (tagString == null || tagString.trim().isEmpty()) {
+            return Arrays.asList(ReminderTag.OTHER);
+        }
+        
+        return Arrays.stream(tagString.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .map(s -> {
+                try {
+                    return ReminderTag.valueOf(s.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    return ReminderTag.OTHER;
+                }
+            })
+            .collect(Collectors.toList());
     }
 
     /**

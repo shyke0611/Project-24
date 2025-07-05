@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   View,
   Text,
@@ -16,43 +16,68 @@ import {
 import { Ionicons } from "@expo/vector-icons"
 import DateTimePicker from "@react-native-community/datetimepicker"
 import Button from "./Button"
+import { ReminderTag } from "../services/reminderService"
 
 type ReminderFormModalProps = {
   visible: boolean
   onClose: () => void
   onSave: (reminder: {
     title: string
-    date: Date
-    time: Date
-    notes: string
-    type: string
+    timestamp: string // ISO string
+    description?: string
+    tags: ReminderTag[]
   }) => void
+  editingReminder?: {
+    id: string
+    title: string
+    timestamp: string
+    description?: string
+    tags: ReminderTag[]
+  } | null
 }
 
-const ReminderFormModal = ({ visible, onClose, onSave }: ReminderFormModalProps) => {
-  const [title, setTitle] = useState("")
-  const [date, setDate] = useState(new Date())
-  const [time, setTime] = useState(new Date())
-  const [notes, setNotes] = useState("")
-  const [type, setType] = useState("other")
-  const [showDatePicker, setShowDatePicker] = useState(false)
-  const [showTimePicker, setShowTimePicker] = useState(false)
+const ReminderFormModal = ({ visible, onClose, onSave, editingReminder }: ReminderFormModalProps) => {
+  const [title, setTitle] = useState(editingReminder?.title || "")
+  const [dateTime, setDateTime] = useState(editingReminder ? new Date(editingReminder.timestamp) : new Date())
+  const [description, setDescription] = useState(editingReminder?.description || "")
+  const [selectedTags, setSelectedTags] = useState<ReminderTag[]>(editingReminder?.tags || [ReminderTag.OTHER])
+  const [showDateTimePicker, setShowDateTimePicker] = useState(false)
+
+  // Update form fields when editingReminder changes
+  useEffect(() => {
+    if (editingReminder) {
+      setTitle(editingReminder.title)
+      setDateTime(new Date(editingReminder.timestamp))
+      setDescription(editingReminder.description || "")
+      setSelectedTags(editingReminder.tags)
+    } else {
+      // Reset form when not editing
+      setTitle("")
+      setDateTime(new Date())
+      setDescription("")
+      setSelectedTags([ReminderTag.OTHER])
+    }
+  }, [editingReminder])
 
   const handleSave = () => {
     if (title.trim()) {
-      onSave({ title, date, time, notes, type })
+      const timestamp = dateTime.toISOString()
+      onSave({ 
+        title: title.trim(), 
+        timestamp, 
+        description: description.trim() || undefined,
+        tags: selectedTags
+      })
       resetForm()
     }
   }
 
   const resetForm = () => {
     setTitle("")
-    setDate(new Date())
-    setTime(new Date())
-    setNotes("")
-    setType("other")
-    setShowDatePicker(false)
-    setShowTimePicker(false)
+    setDateTime(new Date())
+    setDescription("")
+    setSelectedTags([ReminderTag.OTHER])
+    setShowDateTimePicker(false)
   }
 
   const handleClose = () => {
@@ -60,22 +85,24 @@ const ReminderFormModal = ({ visible, onClose, onSave }: ReminderFormModalProps)
     onClose()
   }
 
-  const formatDate = (date: Date) => date.toLocaleDateString()
-  const formatTime = (time: Date) => time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-
-  const handleDateChange = (_: any, selectedDate?: Date) => {
-    if (selectedDate) setDate(selectedDate)
+  const formatDateTime = (date: Date) => {
+    return date.toLocaleString([], { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit', 
+      minute: '2-digit' 
+    })
   }
 
-  const handleTimeChange = (_: any, selectedTime?: Date) => {
-    if (selectedTime) setTime(selectedTime)
+  const handleDateTimeChange = (_: any, selectedDateTime?: Date) => {
+    if (selectedDateTime) setDateTime(selectedDateTime)
   }
 
-  const toggleDatePicker = () => setShowDatePicker(prev => !prev)
-  const toggleTimePicker = () => setShowTimePicker(prev => !prev)
+  const toggleDateTimePicker = () => setShowDateTimePicker(prev => !prev)
 
-  const reminderTypes = ["medication", "appointment", "event", "task", "other"]
-  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+  const reminderTags = Object.values(ReminderTag)
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
@@ -88,13 +115,15 @@ const ReminderFormModal = ({ visible, onClose, onSave }: ReminderFormModalProps)
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color="#000" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Add New Reminder</Text>
+            <Text style={styles.headerTitle}>
+              {editingReminder ? "Edit Reminder" : "Add New Reminder"}
+            </Text>
             <View style={styles.placeholder} />
           </View>
 
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Title</Text>
+              <Text style={styles.label}>Title *</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Enter reminder title"
@@ -105,33 +134,17 @@ const ReminderFormModal = ({ visible, onClose, onSave }: ReminderFormModalProps)
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Date</Text>
-              <TouchableOpacity style={styles.dateTimeButton} onPress={toggleDatePicker}>
-                <Text style={styles.dateTimeText}>{formatDate(date)}</Text>
+              <Text style={styles.label}>Date & Time *</Text>
+              <TouchableOpacity style={styles.dateTimeButton} onPress={toggleDateTimePicker}>
+                <Text style={styles.dateTimeText}>{formatDateTime(dateTime)}</Text>
                 <Ionicons name="calendar-outline" size={20} color="#5EBFB5" />
               </TouchableOpacity>
-              {showDatePicker && (
+              {showDateTimePicker && (
                 <DateTimePicker
-                  value={date}
-                  mode="date"
+                  value={dateTime}
+                  mode="datetime"
                   display={Platform.OS === "ios" ? "inline" : "default"}
-                  onChange={handleDateChange}
-                />
-              )}
-            </View>
-
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>Time</Text>
-              <TouchableOpacity style={styles.dateTimeButton} onPress={toggleTimePicker}>
-                <Text style={styles.dateTimeText}>{formatTime(time)}</Text>
-                <Ionicons name="time-outline" size={20} color="#5EBFB5" />
-              </TouchableOpacity>
-              {showTimePicker && (
-                <DateTimePicker
-                  value={time}
-                  mode="time"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={handleTimeChange}
+                  onChange={handleDateTimeChange}
                 />
               )}
             </View>
@@ -139,31 +152,41 @@ const ReminderFormModal = ({ visible, onClose, onSave }: ReminderFormModalProps)
             <View style={styles.formGroup}>
               <Text style={styles.label}>Type</Text>
               <View style={styles.typeContainer}>
-                {reminderTypes.map((t) => (
+                {reminderTags.map((t) => (
                   <TouchableOpacity
                     key={t}
-                    style={[styles.typeButton, type === t && styles.selectedTypeButton]}
-                    onPress={() => setType(t)}
+                    style={[styles.typeButton, selectedTags.includes(t) && styles.selectedTypeButton]}
+                    onPress={() => {
+                      if (selectedTags.includes(t)) {
+                        setSelectedTags(selectedTags.filter(tag => tag !== t))
+                      } else {
+                        setSelectedTags([...selectedTags, t])
+                      }
+                    }}
                   >
-                    <Text style={[styles.typeText, type === t && styles.selectedTypeText]}>{capitalize(t)}</Text>
+                    <Text style={[styles.typeText, selectedTags.includes(t) && styles.selectedTypeText]}>{capitalize(t)}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Notes (Optional)</Text>
+              <Text style={styles.label}>Description (Optional)</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Add any additional notes"
-                value={notes}
-                onChangeText={setNotes}
+                placeholder="Add any additional details"
+                value={description}
+                onChangeText={setDescription}
                 multiline
                 numberOfLines={4}
               />
             </View>
 
-            <Button title="Save Reminder" onPress={handleSave} style={styles.saveButton} />
+            <Button 
+              title={editingReminder ? "Update Reminder" : "Save Reminder"} 
+              onPress={handleSave} 
+              style={styles.saveButton} 
+            />
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>

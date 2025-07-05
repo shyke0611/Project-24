@@ -68,10 +68,11 @@ public class ReminderController {
 
         Reminder existing = optional.get();
 
-        if (updates.getMessage() != null) existing.updateMessage(updates.getMessage());
+        // Only update fields that are provided (not null)
+        if (updates.getTitle() != null) existing.updateTitle(updates.getTitle());
         if (updates.getTimestamp() != null) existing.updateTimestamp(updates.getTimestamp());
         if (updates.getDescription() != null) existing.updateDescription(updates.getDescription());
-        if (updates.getTag() != null) existing.updateTag(updates.getTag());
+        if (updates.getTags() != null) existing.updateTags(updates.getTags());
         if (updates.getStatus() != null) existing.updateStatus(updates.getStatus());
 
         Reminder saved = reminderRepository.save(existing);

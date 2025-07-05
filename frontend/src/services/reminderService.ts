@@ -2,20 +2,56 @@ import { reminderAPI } from './api';
 
 export interface Reminder {
   id?: string;
-  message: string;
-  description?: string;
-  timestamp: string;
   userId: string;
-  status: 'INCOMPLETE' | 'COMPLETE' | 'MISSED';
-  tag?: string;
+  title: string;
+  timestamp: string; // ISO string format
+  description?: string;
+  tags: ReminderTag[];
+  status: ReminderStatus;
+}
+
+export enum ReminderTag {
+  MEDICATION = 'MEDICATION',
+  APPOINTMENT = 'APPOINTMENT',
+  EVENT = 'EVENT',
+  TASK = 'TASK',
+  PERSONAL = 'PERSONAL',
+  WORK = 'WORK',
+  FINANCE = 'FINANCE',
+  HEALTH = 'HEALTH',
+  TRAVEL = 'TRAVEL',
+  SOCIAL = 'SOCIAL',
+  EDUCATION = 'EDUCATION',
+  LEISURE = 'LEISURE',
+  OTHER = 'OTHER'
+}
+
+export enum ReminderStatus {
+  INCOMPLETE = 'INCOMPLETE',
+  COMPLETE = 'COMPLETE',
+  MISSED = 'MISSED'
 }
 
 export interface CreateReminderRequest {
-  title: string;
-  description?: string;
-  dateTime: string;
   userId: string;
-  priority?: 'low' | 'medium' | 'high';
+  title: string;
+  timestamp: string; // ISO string
+  description?: string;
+  tags: ReminderTag[];
+}
+
+export interface UpdateReminderRequest {
+  title?: string;
+  timestamp?: string; // ISO string
+  description?: string;
+  tags?: ReminderTag[];
+  status?: ReminderStatus;
+}
+
+export interface PaginatedRemindersResponse {
+  reminders: Reminder[];
+  hasMore: boolean;
+  currentPage: number;
 }
 
 class ReminderService {
@@ -25,7 +61,7 @@ class ReminderService {
     this.userId = userId;
   }
 
-  async createReminder(reminder: Omit<Reminder, 'id' | 'status'>): Promise<Reminder> {
+  async createReminder(reminder: CreateReminderRequest): Promise<Reminder> {
     if (!this.userId) {
       throw new Error('User ID not set');
     }
@@ -37,9 +73,13 @@ class ReminderService {
       });
       
       return {
-        ...reminder,
         id: response.id,
-        status: 'INCOMPLETE',
+        userId: response.userId,
+        title: response.title,
+        timestamp: response.timestamp,
+        description: response.description,
+        tags: response.tags,
+        status: response.status,
       };
     } catch (error) {
       console.error('Error creating reminder:', error);
@@ -47,36 +87,54 @@ class ReminderService {
     }
   }
 
-  async getReminders(): Promise<Reminder[]> {
+  async getReminders(page: number = 0): Promise<PaginatedRemindersResponse> {
     if (!this.userId) {
       throw new Error('User ID not set');
     }
 
     try {
-      const response = await reminderAPI.getReminders(this.userId);
+      const response = await reminderAPI.getReminders(this.userId, page);
       
-      return response.map((reminder: any) => ({
+      const reminders = response.map((reminder: any) => ({
         id: reminder.id,
-        message: reminder.message,
-        description: reminder.description,
-        timestamp: reminder.timestamp,
         userId: reminder.userId,
+        title: reminder.title,
+        timestamp: reminder.timestamp,
+        description: reminder.description,
+        tags: reminder.tags,
         status: reminder.status,
-        tag: reminder.tag,
       })) || [];
+
+      // Backend returns 10 items per page, so if we get less than 10, there are no more pages
+      const hasMore = reminders.length === 10;
+      
+      return {
+        reminders,
+        hasMore,
+        currentPage: page,
+      };
     } catch (error) {
       console.error('Error fetching reminders:', error);
-      return [];
+      return {
+        reminders: [],
+        hasMore: false,
+        currentPage: page,
+      };
     }
   }
 
-  async updateReminder(reminderId: string, updates: Partial<Reminder>): Promise<Reminder> {
+  async updateReminder(reminderId: string, updates: UpdateReminderRequest): Promise<Reminder> {
     try {
       const response = await reminderAPI.updateReminder(reminderId, updates);
       
       return {
-        ...response,
-        dateTime: new Date(response.dateTime),
+        id: response.id,
+        userId: response.userId,
+        title: response.title,
+        timestamp: response.timestamp,
+        description: response.description,
+        tags: response.tags,
+        status: response.status,
       };
     } catch (error) {
       console.error('Error updating reminder:', error);
@@ -94,11 +152,15 @@ class ReminderService {
   }
 
   async markAsCompleted(reminderId: string): Promise<Reminder> {
-    return this.updateReminder(reminderId, { status: 'COMPLETE' });
+    return this.updateReminder(reminderId, { status: ReminderStatus.COMPLETE });
   }
 
-  async markAsCancelled(reminderId: string): Promise<Reminder> {
-    return this.updateReminder(reminderId, { status: 'MISSED' });
+  async markAsMissed(reminderId: string): Promise<Reminder> {
+    return this.updateReminder(reminderId, { status: ReminderStatus.MISSED });
+  }
+
+  async markAsIncomplete(reminderId: string): Promise<Reminder> {
+    return this.updateReminder(reminderId, { status: ReminderStatus.INCOMPLETE });
   }
 }
 

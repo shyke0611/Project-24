@@ -72,8 +72,8 @@ export const reminderAPI = {
     return response.data;
   },
   
-  getReminders: async (userId: string) => {
-    const response = await api.get(`/reminders?userId=${userId}`);
+  getReminders: async (userId: string, page: number = 0) => {
+    const response = await api.get(`/reminders?userId=${userId}&page=${page}`);
     return response.data;
   },
   
